@@ -10,71 +10,38 @@ use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 /**
  * Data transformer for single mode (i.e., multiple = false)
- *
- * Class EntityToPropertyTransformer
- *
- * @package Tetranz\Select2EntityBundle\Form\DataTransformer
  */
 class EntityToPropertyTransformer implements DataTransformerInterface
 {
-    /** @var ObjectManager */
-    protected $em;
-    /** @var  string */
-    protected $className;
-    /** @var  string */
-    protected $textProperty;
-    /** @var  string */
-    protected $primaryKey;
-    /** @var string  */
-    protected $newTagPrefix;
-    /** @var string  */
-    protected $newTagText;
-    /** @var PropertyAccessor */
-    protected $accessor;
+    protected PropertyAccessor $accessor;
 
-    /**
-     * @param ObjectManager $em
-     * @param string                 $class
-     * @param string|null            $textProperty
-     * @param string                 $primaryKey
-     * @param string                 $newTagPrefix
-     */
-    public function __construct(ObjectManager $em, $class, $textProperty = null, $primaryKey = 'id', $newTagPrefix = '__', $newTagText = ' (NEW)')
+    public function __construct(protected ObjectManager $em, protected string $className, protected ?string $textProperty = null, protected string $primaryKey = 'id', protected string $newTagPrefix = '__', protected string $newTagText = ' (NEW)')
     {
-        $this->em = $em;
-        $this->className = $class;
-        $this->textProperty = $textProperty;
-        $this->primaryKey = $primaryKey;
-        $this->newTagPrefix = $newTagPrefix;
-        $this->newTagText = $newTagText;
         $this->accessor = PropertyAccess::createPropertyAccessor();
     }
 
     /**
      * Transform entity to array
-     *
-     * @param mixed $entity
-     * @return array
      */
-    public function transform($entity)
+    public function transform(mixed $value): mixed
     {
-        $data = array();
-        if (empty($entity)) {
+        $data = [];
+        if (empty($value)) {
             return $data;
         }
 
         $text = is_null($this->textProperty)
-            ? (string) $entity
-            : $this->accessor->getValue($entity, $this->textProperty);
+            ? (string) $value
+            : $this->accessor->getValue($value, $this->textProperty);
 
-        if ($this->em->contains($entity)) {
-            $value = (string) $this->accessor->getValue($entity, $this->primaryKey);
+        if ($this->em->contains($value)) {
+            $dataValue = (string) $this->accessor->getValue($value, $this->primaryKey);
         } else {
-            $value = $this->newTagPrefix . $text;
-            $text = $text.$this->newTagText;
+            $dataValue = $this->newTagPrefix . $text;
+            $text = $text . $this->newTagText;
         }
 
-        $data[$value] = $text;
+        $data[$dataValue] = $text;
 
         return $data;
     }
@@ -85,7 +52,7 @@ class EntityToPropertyTransformer implements DataTransformerInterface
      * @param string $value
      * @return mixed|null|object
      */
-    public function reverseTransform($value)
+    public function reverseTransform(mixed $value): mixed
     {
         if (empty($value)) {
             return null;
@@ -95,7 +62,7 @@ class EntityToPropertyTransformer implements DataTransformerInterface
         $tagPrefixLength = strlen($this->newTagPrefix);
         $cleanValue = substr($value, $tagPrefixLength);
         $valuePrefix = substr($value, 0, $tagPrefixLength);
-        if ($valuePrefix == $this->newTagPrefix) {
+        if ($valuePrefix === $this->newTagPrefix) {
             // In that case, we have a new entry
             $entity = new $this->className;
             $this->accessor->setValue($entity, $this->textProperty, $cleanValue);
