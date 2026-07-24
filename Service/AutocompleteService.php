@@ -18,12 +18,12 @@ class AutocompleteService
     public function getAutocompleteResults(Request $request, string|FormTypeInterface $type): array
     {
         $form = $this->formFactory->create($type);
-        $fieldOptions = $form->get($request->get('field_name'))->getConfig()->getOptions();
+        $fieldOptions = $form->get($request->query->get('field_name'))->getConfig()->getOptions();
 
         /** @var EntityRepository $repo */
         $repo = $this->doctrine->getRepository($fieldOptions['class']);
 
-        $term = $request->get('q');
+        $term = $request->query->get('q');
 
         $countQB = $repo->createQueryBuilder('e');
         $countQB
@@ -33,7 +33,7 @@ class AutocompleteService
         ;
 
         $maxResults = $fieldOptions['page_limit'];
-        $offset = ($request->get('page', 1) - 1) * $maxResults;
+        $offset = ($request->query->get('page', 1) - 1) * $maxResults;
 
         $resultQb = $repo->createQueryBuilder('e');
         $resultQb

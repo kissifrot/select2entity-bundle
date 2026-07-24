@@ -24,7 +24,7 @@ class TetranzSelect2EntityExtension extends Extension
 
         $container->setParameter("tetranz_select2_entity.config", $config);
 
-        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('services.xml');
+        $loader = new Loader\PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader->load('services.php');
     }
 }
